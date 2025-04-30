@@ -2,6 +2,9 @@ from typing import Any, Sequence, Union
 
 import numpy as np
 from sklearn.metrics import confusion_matrix, roc_auc_score
+from sklearn.metrics import silhouette_score as skl_silhouette_score
+from sklearn.cluster import KMeans
+from typing import Optional
 
 Number = Union[int, float]
 ArrayLike = Sequence[Any]
@@ -332,3 +335,49 @@ def f1_score(
     if prec + rec == 0:
         return 0.0
     return 2 * prec * rec / (prec + rec)
+
+def silhouette_score(
+    X: np.ndarray, labels: Optional[np.ndarray] = None, n_clusters: Optional[int] = None, random_state: Optional[int] = None
+) -> float:
+    """
+    Compute the Silhouette Score for clustering evaluation.
+
+    The Silhouette Score measures how similar an object is to its own cluster 
+    compared to other clusters. A higher silhouette score indicates better-defined clusters.
+
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, n_features)
+        Feature data used for clustering.
+    labels : array-like of shape (n_samples,), optional
+        Predicted cluster labels. If None, KMeans clustering will be applied automatically.
+    n_clusters : int, optional
+        Number of clusters to use if labels are not provided.
+    random_state : int, optional
+        Random seed for KMeans initialization (for reproducibility).
+
+    Returns
+    -------
+    float
+        Silhouette Score ranging from -1 to 1.
+
+    Notes
+    -----
+    - Score close to +1: samples are well clustered.
+    - Score close to 0: clusters are overlapping.
+    - Score close to -1: samples are misassigned to the wrong clusters.
+
+    Example
+    -------
+    >>> from sklearn.datasets import make_blobs
+    >>> X, _ = make_blobs(n_samples=300, centers=3, random_state=42)
+    >>> silhouette_score(X, n_clusters=3)
+    0.6554
+    """
+    if labels is None:
+        if n_clusters is None:
+            raise ValueError("You must provide either 'labels' or 'n_clusters'.")
+        model = KMeans(n_clusters=n_clusters, random_state=random_state)
+        labels = model.fit_predict(X)
+    
+    return skl_silhouette_score(X, labels)
